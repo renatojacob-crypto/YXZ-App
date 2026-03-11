@@ -8,6 +8,8 @@ import com.enzo.yxzapp.enums.CorAdministradora;
 import com.enzo.yxzapp.enums.Role;
 import com.enzo.yxzapp.enums.StatusOficina;
 import com.enzo.yxzapp.enums.TipoOficina;
+import com.enzo.yxzapp.event.ArquivoDriveDTO;
+import com.enzo.yxzapp.event.FotosOficinaEnviadasEvent;
 import com.enzo.yxzapp.event.UsuarioMudouNomeEvent;
 import com.enzo.yxzapp.exception.BadRequestException;
 import com.enzo.yxzapp.exception.NotFoundException;
@@ -15,15 +17,18 @@ import com.enzo.yxzapp.model.Oficina;
 import com.enzo.yxzapp.model.User;
 import com.enzo.yxzapp.repository.OficinaRepository;
 import com.enzo.yxzapp.repository.UserRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,10 +37,12 @@ public class OficinaServiceImpl implements OficinaService {
 
     private final OficinaRepository oficinaRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public OficinaServiceImpl(OficinaRepository oficinaRepository,  UserRepository userRepository) {
+    public OficinaServiceImpl(OficinaRepository oficinaRepository,  UserRepository userRepository, ApplicationEventPublisher eventPublisher) {
         this.oficinaRepository = oficinaRepository;
         this.userRepository = userRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -256,6 +263,33 @@ public class OficinaServiceImpl implements OficinaService {
                 .stream()
                 .map(OficinaResponse::fromEntity)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void receberFotos(Long id, List<MultipartFile> fotos) {
+        Oficina oficina = oficinaRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Oficina não encontrada"));
+
+        List<ArquivoDriveDTO> arquivosSeguros = new ArrayList<>();
+
+        try {
+            for (MultipartFile foto : fotos) {
+                // Converte o MultipartFile em bytes seguros antes da requisição acabar
+                arquivosSeguros.add(new ArquivoDriveDTO(
+                        foto.getOriginalFilename(),
+                        foto.getContentType(),
+                        foto.getBytes()
+                ));
+            }
+        } catch (Exception e) {
+            throw new BadRequestException("Erro ao processar as imagens enviadas.");
+        }
+
+        String nomePasta = oficina.getTipo() + " - " + oficina.getEscola() + " - " + oficina.getData();
+
+        // Dispara o evento e libera o Front-end!
+        eventPublisher.publishEvent(new FotosOficinaEnviadasEvent(oficina.getId(), nomePasta, arquivosSeguros));
     }
 
 
