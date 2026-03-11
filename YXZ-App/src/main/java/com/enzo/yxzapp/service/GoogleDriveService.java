@@ -32,7 +32,20 @@ public class GoogleDriveService {
         ).setApplicationName("YXZ-App").build();
     }
 
+    public String criarPastaDaOficina(String nomePasta) throws IOException {
+        Drive driveService = getDriveService();
 
+        File fileMetadata = new File();
+        fileMetadata.setName(nomePasta);
+        fileMetadata.setMimeType("application/vnd.google-apps.folder");
+        fileMetadata.setParents(Collections.singletonList(pastaMaeId)); // Coloca dentro da pasta principal
+
+        File pastaCriada = driveService.files().create(fileMetadata)
+                .setFields("id, webViewLink")
+                .execute();
+
+        return pastaCriada.getId();
+    }
 
 
 
