@@ -45,6 +45,7 @@ public class GoogleDriveService {
         fileMetadata.setParents(Collections.singletonList(pastaMaeId)); // Coloca dentro da pasta principal
 
         File pastaCriada = driveService.files().create(fileMetadata)
+                .setSupportsAllDrives(true)
                 .setFields("id, webViewLink")
                 .execute();
 
