@@ -20,7 +20,7 @@ public class GoogleDriveService {
     @Value("${google.drive.folder.id}")
     private String pastaMaeId;
 
-    private Drive getDriveService() throws IOException {
+    public Drive getDriveService() throws IOException {
         GoogleCredentials credentials = GoogleCredentials.fromStream(
                 new ClassPathResource("credentials.json").getInputStream()
         ).createScoped(Collections.singletonList(DriveScopes.DRIVE_FILE));
