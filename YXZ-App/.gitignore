@@ -35,3 +35,4 @@ build/
 docker-compose.yml
 application.yml
 credentials.json
+application.properties
