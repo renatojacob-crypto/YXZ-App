@@ -31,8 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
-
 docker-compose.yml
 application.yml
 credentials.json
 application.properties
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
